@@ -2,7 +2,7 @@
 
 A Python STUN client for getting NAT type and external IP with RFC 5780
 
-stun_protocol upstream project:
+stun_protocol project:
 
 [https://github.com/nbuckles13/python-stun-protocol](https://github.com/nbuckles13/python-stun-protocol)
 
