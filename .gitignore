@@ -1,0 +1,9 @@
+*.pkl
+*.pyc
+*.swp
+.coverage
+build/
+dist/
+pystuntest*.egg-info
+venv/
+__pycache__
