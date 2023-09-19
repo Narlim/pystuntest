@@ -10,6 +10,7 @@ def main():
 
     setup(
         name='pystuntest',
+        install_requires=['netifaces>=0.11.0'],
         version=pystuntest.__version__,
         packages=find_packages(),
         zip_safe=False,
