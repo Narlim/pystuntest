@@ -18,5 +18,14 @@ pystuntest
 
 or
 
-pystuntest --debug
+pystuntest -H 'stun_host' --debug
+```
+
+#### stun server with rfc5780
+```
+stun.miwifi.com
+stunserver.stunprotocol.org
+stun.fitauto.ru
+stun.hot-chilli.net
+stun.syncthing.net
 ```

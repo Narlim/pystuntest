@@ -67,12 +67,18 @@ def stun_test(sock, host, port, message):
         retVal['Resp'] = False
         return retVal
     if trans_id == buf[8:20]:
-        xord_mapped_port = int(b2a_hexstr(bytes(m ^ x for m, x in zip(magic_cookie[:2], xor_port))), 16)
-        xord_mapped_address_bytes = bytes(m ^ x for m, x in zip(magic_cookie, xor_address)) 
-        xord_mapped_address = '.'.join([str(xord_mapped_address_bytes[0]),
+        try:
+            xord_mapped_port = int(b2a_hexstr(bytes(m ^ x for m, x in zip(magic_cookie[:2], xor_port))), 16)
+            xord_mapped_address_bytes = bytes(m ^ x for m, x in zip(magic_cookie, xor_address)) 
+            xord_mapped_address = '.'.join([str(xord_mapped_address_bytes[0]),
                                         str(xord_mapped_address_bytes[1]),
                                         str(xord_mapped_address_bytes[2]),
                                         str(xord_mapped_address_bytes[3])])
+        except ValueError:
+            retVal['Resp'] = True
+            retVal['MappedPort'] = int(b2a_hexstr(buf[26:28]), 16)
+            retVal['MappedAddress'] = '.'.join([str(buf[28]), str(buf[29]), str(buf[30]), str(buf[31])])
+            return retVal
         retVal['Resp'] = True
         retVal['MappedPort'] = int(b2a_hexstr(buf[26:28]), 16)
         retVal['MappedAddress'] = '.'.join([str(buf[28]), str(buf[29]), str(buf[30]), str(buf[31])])
@@ -94,7 +100,7 @@ def get_nat_mapping(sock, host, port) -> (str, dict):
     log.debug(f"Mapping Test1 result: {ret_test1}")
     if resp:
         if ret_test1['OtherAddress'] is None:
-            return 'Test Not Support', None
+            return 'Test Not Support RFC5780', ret_test1
         else:
             local_addresses = get_local_address()
             XorMappedAddress = ret_test1['XorMappedAddress']
@@ -108,26 +114,26 @@ def get_nat_mapping(sock, host, port) -> (str, dict):
                 if ret_test2['XorMappedAddress'] == ret_test1['XorMappedAddress']:
                     return 'Endpoint-Independent Mapping', ret_test2
                 else:
-                    log.debug('Do Test3')
+                    log.debug('Do Mapping Test3')
                     ret_test3 = stun_test(sock, ret_test1['OtherAddress'], ret_test1['OtherPort'], m)
                     log.debug(f"Mapping Test3 result: {ret_test3}")
                     if ret_test3['XorMappedAddress'] == ret_test2['XorMappedAddress']:
                         return 'Address-Dependent Mapping', ret_test3
                     else:
-                        return 'AddressAndPort-Dependent Mapping', ret_test3
+                        return 'Address and Port-Dependent Mapping', ret_test3
     else:
         return 'UDP Blocked', None
     
 
 def get_nat_filtering(sock, host, port) -> (str, dict):
-    log.debug('Do Test1')
+    log.debug('Do Filtering Test1')
     m = message.Message(message.MessageClass.REQUEST, message.MessageMethod.BINDING)
     ret_test1 = stun_test(sock, host, port, m)
     log.debug(f"Filtering Test1 result: {ret_test1}")
     if ret_test1['OtherAddress'] is None:
-        return 'Test Not Support', None
+        return 'Test Not Support RFC5780', ret_test1
     else:
-        log.debug('Do Test2')
+        log.debug('Do Filtering Test2')
         m = message.Message(message.MessageClass.REQUEST, message.MessageMethod.BINDING)
         # set change ip and change port flag
         # 00000000 00000000 00000000 00000110
@@ -137,7 +143,7 @@ def get_nat_filtering(sock, host, port) -> (str, dict):
         if ret_test2['Resp']:
             return 'Endpoint-Independent Filtering', ret_test2
         else:
-            log.debug('Do Test3')
+            log.debug('Do Filtering Test3')
             m = message.Message(message.MessageClass.REQUEST, message.MessageMethod.BINDING)
             # only set change port flag
             # 00000000 00000000 00000000 00000010
